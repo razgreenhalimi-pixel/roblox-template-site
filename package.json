@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roblox Clothing Template Finder</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top, #26375f, #10131b 55%, #08090d);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(720px, 100%);
+      background: rgba(18, 20, 30, 0.92);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 28px;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.45);
+    }
+    h1 { margin: 0 0 8px; font-size: 32px; }
+    p { color: #cfd7ff; line-height: 1.5; }
+    .row {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    input {
+      flex: 1;
+      border: 0;
+      outline: none;
+      padding: 16px;
+      border-radius: 14px;
+      background: #252a3a;
+      color: white;
+      font-size: 16px;
+    }
+    button, .download {
+      border: 0;
+      padding: 16px 20px;
+      border-radius: 14px;
+      background: #4f7cff;
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button:hover, .download:hover { filter: brightness(1.08); }
+    .result {
+      margin-top: 22px;
+      display: none;
+      background: rgba(255,255,255,0.06);
+      border-radius: 18px;
+      padding: 18px;
+    }
+    .info {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .info div {
+      background: rgba(0,0,0,0.22);
+      padding: 12px;
+      border-radius: 12px;
+      color: #e7ecff;
+      word-break: break-word;
+    }
+    img {
+      width: 100%;
+      max-height: 420px;
+      object-fit: contain;
+      background: #0b0d13;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      margin: 12px 0;
+    }
+    .error {
+      color: #ff9b9b;
+      margin-top: 14px;
+      min-height: 24px;
+    }
+    .small {
+      font-size: 13px;
+      color: #aeb9f0;
+    }
+    @media (max-width: 600px) {
+      .row { flex-direction: column; }
+      .info { grid-template-columns: 1fr; }
+      h1 { font-size: 25px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Roblox Clothing Template Finder</h1>
+    <p>Paste a Roblox Classic Shirt, Pants, or T-Shirt ID / catalog link. The site finds the real internal template image and lets you download it.</p>
+    <p class="small">Use only for clothing you own or have permission to use.</p>
+
+    <div class="row">
+      <input id="assetInput" placeholder="Example: 123456789 or Roblox catalog link" />
+      <button id="findBtn">Find Template</button>
+    </div>
+
+    <div id="message" class="error"></div>
+
+    <section id="result" class="result">
+      <div class="info">
+        <div><b>Type:</b> <span id="typeText"></span></div>
+        <div><b>Template ID:</b> <span id="templateIdText"></span></div>
+      </div>
+      <img id="preview" alt="Roblox clothing template preview" />
+      <a id="downloadBtn" class="download" href="#">Download PNG</a>
+    </section>
+  </main>
+
+  <script>
+    const input = document.getElementById("assetInput");
+    const btn = document.getElementById("findBtn");
+    const msg = document.getElementById("message");
+    const result = document.getElementById("result");
+    const typeText = document.getElementById("typeText");
+    const templateIdText = document.getElementById("templateIdText");
+    const preview = document.getElementById("preview");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    function getId(text) {
+      const match = String(text || "").match(/\d+/);
+      return match ? match[0] : null;
+    }
+
+    async function findTemplate() {
+      const id = getId(input.value);
+      result.style.display = "none";
+      msg.textContent = "";
+
+      if (!id) {
+        msg.textContent = "Put a valid Roblox clothing ID or catalog link.";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Loading...";
+
+      try {
+        const response = await fetch(`/api/find?id=${encodeURIComponent(id)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Could not find template.");
+        }
+
+        typeText.textContent = data.type;
+        templateIdText.textContent = data.templateId;
+        preview.src = data.previewUrl;
+        downloadBtn.href = data.downloadUrl;
+        result.style.display = "block";
+      } catch (error) {
+        msg.textContent = error.message;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Find Template";
+      }
+    }
+
+    btn.addEventListener("click", findTemplate);
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") findTemplate();
+    });
+  </script>
+</body>
+</html>
